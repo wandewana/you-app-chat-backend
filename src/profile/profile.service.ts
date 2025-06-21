@@ -20,4 +20,8 @@ export class ProfileService {
   async findByUserId(userId: string) {
     return this.profileModel.findOne({ user: userId });
   }
+
+  async deleteByUserId(userId: string) {
+    return this.profileModel.deleteOne({ user: userId });
+  }
 }
