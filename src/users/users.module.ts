@@ -4,17 +4,20 @@ import { Model } from 'mongoose';
 import { User, UserDocument, UserSchema } from './user.schema';
 import { UsersController } from './users.controller';
 import { HashService } from '../common/hash.service';
+import { UsersService } from './users.service';
 
 @Injectable()
 class InitService implements OnModuleInit {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private hashService: HashService,
+  ) {}
 
   async onModuleInit() {
-    const existing = await this.userModel.findOne({ email: 'test@example.com' });
-    if (!existing) {
-      await this.userModel.create({ email: 'test@example.com', password: '123456' });
-      console.log('✔️ Test user inserted');
-    }
+    await this.userModel.deleteOne({ email: 'test@example.com' });
+    const hashedPassword = await this.hashService.hash('123456');
+    await this.userModel.create({ email: 'test@example.com', password: hashedPassword });
+    console.log('✔️ Test user reset with hashed password');
   }
 }
 
@@ -22,8 +25,8 @@ class InitService implements OnModuleInit {
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [InitService, HashService],
+  providers: [InitService, HashService, UsersService],
   controllers: [UsersController],
-  exports: [HashService],
+  exports: [HashService, UsersService],
 })
 export class UsersModule {}
