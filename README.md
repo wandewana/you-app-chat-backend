@@ -82,6 +82,42 @@ The application will be running at `http://localhost:3000`.
     -   **Success Response**:
         ```json
         {
-          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          "access_token": "your-jwt-token"
         }
         ```
+
+### Profile Management
+
+All profile endpoints require an `Authorization: Bearer <token>` header.
+
+#### `POST /api/createProfile`
+
+Creates or updates a profile for the authenticated user.
+
+-   **Request Body:**
+    ```json
+    {
+      "zodiac": "Aries",
+      "horoscope": "Today is a good day."
+    }
+    ```
+
+#### `GET /api/getProfile`
+
+Retrieves the profile of the authenticated user.
+
+#### `PUT /api/updateProfile`
+
+Updates the profile of the authenticated user.
+
+-   **Request Body:**
+    ```json
+    {
+      "zodiac": "Taurus",
+      "horoscope": "A new opportunity will arise."
+    }
+    ```
+
+#### `DELETE /api/deleteProfile`
+
+Deletes the profile of the authenticated user.
