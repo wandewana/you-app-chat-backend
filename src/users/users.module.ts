@@ -3,6 +3,7 @@ import { InjectModel, MongooseModule } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument, UserSchema } from './user.schema';
 import { UsersController } from './users.controller';
+import { HashService } from '../common/hash.service';
 
 @Injectable()
 class InitService implements OnModuleInit {
@@ -21,8 +22,8 @@ class InitService implements OnModuleInit {
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [InitService],
+  providers: [InitService, HashService],
   controllers: [UsersController],
+  exports: [HashService],
 })
 export class UsersModule {}
-
