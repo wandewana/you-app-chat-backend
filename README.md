@@ -101,29 +101,46 @@ This section covers endpoints for managing user profiles. All endpoints require 
 -   **Request Body**:
     ```json
     {
-      "zodiac": "Leo",
-      "horoscope": "Today is a good day."
+      "displayName": "John Doe",
+      "gender": "Male",
+      "birthday": "1990-01-01",
+      "horoscope": "Capricorn",
+      "zodiac": "Rat",
+      "height": 180,
+      "weight": 75
     }
     ```
--   **Success Response** (`201 Created`): Returns the created profile object.
+-   **Success Response** (`201 Created`):
+    ```json
+    {
+      "message": "Profile created successfully"
+    }
+    ```
 
 #### Get a Profile
 
 -   **Endpoint**: `GET /api/getProfile`
 -   **Auth**: JWT Required
--   **Success Response** (`200 OK`): Returns the user's profile object.
+-   **Success Response** (`200 OK`):
+    ```json
+    {
+      "displayName": "John Doe",
+      "gender": "Male",
+      // ... other profile fields
+    }
+    ```
 
 #### Update a Profile
 
 -   **Endpoint**: `PUT /api/updateProfile`
 -   **Auth**: JWT Required
--   **Request Body**:
+-   **Request Body**: Same as create profile, with fields to update.
+-   **Success Response** (`200 OK`):
     ```json
     {
-      "zodiac": "Virgo"
+      "message": "Profile updated successfully"
     }
     ```
--   **Success Response** (`200 OK`): Returns the updated profile object.
 
 #### Delete a Profile
 
@@ -138,59 +155,66 @@ This section covers endpoints for managing user profiles. All endpoints require 
 
 ### Chat Messaging
 
-This section covers endpoints for sending and viewing messages. All endpoints require a valid JWT token in the `Authorization` header.
+This section details how to send and retrieve chat messages between users.
 
 #### Send a Message
-
-Publishes a message to the chat queue for asynchronous processing. The sender is automatically identified from the JWT token.
 
 -   **Endpoint**: `POST /api/sendMessage`
 -   **Auth**: JWT Required
 -   **Request Body**:
-
-```json
-{
-  "receiver": "60d21b4667d0d8992e610c86",
-  "content": "Hello there!"
-}
-```
+    ```json
+    {
+      "to": "recipient-user-id",
+      "message": "Hello, how are you?"
+    }
+    ```
 
 -   **Success Response** (`201 Created`):
 
-```json
-{
-  "status": "Message sent to queue"
-}
-```
+    ```json
+    {
+      "message": "Message sent successfully"
+    }
+    ```
 
-#### View Chat History
+-   **How it Works**: When a message is sent, it is published to a RabbitMQ queue. The consumer service listens for new messages, persists them to the database, and logs a simulated real-time notification to the console.
 
-Retrieves the message history between the logged-in user and another specified user, sorted by time.
+#### Get Messages Between Users
 
--   **Endpoint**: `GET /api/viewMessages`
+-   **Endpoint**: `GET /api/getMessages/:userId`
 -   **Auth**: JWT Required
--   **Query Parameters**:
-    -   `userId` (string, required): The MongoDB ObjectId of the other user in the conversation.
--   **Example Request**:
-
-```
-GET /api/viewMessages?userId=60d21b4667d0d8992e610c86
-```
-
+-   **URL Parameter**:
+    -   `userId`: The ID of the user you are chatting with.
 -   **Success Response** (`200 OK`):
 
-```json
-{
-  "messages": [
-    {
-      "_id": "66767e3b5e4f1a2b3c4d5e6f",
-      "sender": "665f1a9e1f2c3d4e5f6a7b8c",
-      "receiver": "60d21b4667d0d8992e610c86",
-      "content": "Hello there!",
-      "createdAt": "2025-06-22T04:58:03.123Z",
-      "updatedAt": "2025-06-22T04:58:03.123Z",
-      "__v": 0
-    }
-  ]
-}
+    ```json
+    [
+      {
+        "from": "sender-id",
+        "to": "recipient-id",
+        "message": "Hello!",
+        "timestamp": "2023-10-27T10:00:00.000Z"
+      },
+      // ... other messages
+    ]
+    ```
+
+## Testing
+
+The project includes a full suite of unit tests to ensure code quality and correctness. Tests are written with Jest and follow NestJS testing best practices.
+
+### Running Tests
+
+To run the entire test suite, use the following command:
+
+```bash
+npm run test
 ```
+
+### Mocking Strategy
+
+Unit tests are designed to run in isolation without connecting to a live database or message broker. All external dependencies are mocked using Jest:
+
+-   **Mongoose Models**: Mongoose models are mocked using the `@nestjs/mongoose` `getModelToken` utility. This allows tests to simulate database operations without a live connection.
+-   **Services**: Services like `UsersService`, `JwtService`, and `HashService` are mocked in the test files for the controllers that depend on them. This ensures that controller tests focus only on the controller's logic.
+-   **RabbitMQ**: The RabbitMQ client is mocked to prevent tests from attempting to connect to a live message broker.
