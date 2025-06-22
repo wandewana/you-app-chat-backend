@@ -1,123 +1,196 @@
 # Chat App Backend
 
-This is the backend service for a real-time chat application, built with [NestJS](https://nestjs.com/). It currently features a robust foundation for user authentication and management using MongoDB and JWT.
+This project is a NestJS-based backend for a real-time chat application. It provides user authentication, profile management, and a complete messaging system using MongoDB and RabbitMQ.
 
-## Architecture
+## Features
 
-The application is designed with a modular architecture to ensure separation of concerns and scalability.
+-   **User Authentication**: JWT-based authentication with registration and login.
+-   **Profile Management**: Full CRUD operations for user profiles.
+-   **Real-time Messaging**: Asynchronous message handling with RabbitMQ.
+-   **Simulated Notifications**: Logs notifications upon message receipt in the consumer.
+-   **Database**: MongoDB with Mongoose for data modeling.
+-   **Containerized**: Docker and Docker Compose for easy setup.
 
--   **`AppModule`**: The root module that orchestrates the application and establishes the database connection.
--   **`UsersModule`**: Manages user-related operations, including registration, data storage, and retrieval. It handles password hashing and interacts directly with the `User` schema.
--   **`AuthModule`**: Handles all authentication logic. It uses Passport.js with a JWT strategy to secure the application. It provides endpoints for user login and token generation.
--   **Database**: MongoDB is used as the primary database, managed via a `docker-compose` setup for easy development. Mongoose is used as the ODM for interacting with the database.
+## Prerequisites
 
-## Libraries & Tools
+-   Node.js (v16 or higher)
+-   npm
+-   Docker
+-   Docker Compose
 
--   **Framework**: [NestJS](https://nestjs.com/)
--   **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
--   **Authentication**: [Passport.js](http://www.passportjs.org/) (`passport-jwt`) for JWT-based authentication.
--   **Validation**: `class-validator` and `class-transformer` for robust request data validation.
--   **Password Hashing**: `bcrypt` for securely hashing user passwords.
--   **Containerization**: [Docker](https://www.docker.com/) and `docker-compose` to run the MongoDB instance.
+## Getting Started
 
-## How to Run
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/wandewana/you-app-chat-backend.git
+    cd you-app-chat-backend
+    ```
 
-### Prerequisites
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
--   [Node.js](https://nodejs.org/en/) (v18 or later recommended)
--   [npm](https://www.npmjs.com/)
--   [Docker](https://www.docker.com/products/docker-desktop/)
+3.  **Start services**:
+    This command starts the MongoDB and RabbitMQ services in Docker containers.
+    ```bash
+    docker-compose up -d
+    ```
 
-### 1. Clone the repository
+4.  **Run the application**:
+    The main application server will run on `http://localhost:3000`.
+    ```bash
+    npm run start:dev
+    ```
 
-```bash
-git clone https://github.com/wandewana/you-app-chat-backend.git
-cd you-app-chat-backend
-```
+5.  **Run the RabbitMQ Consumer**:
+    This command starts a separate microservice to listen for and process messages from the queue.
+    ```bash
+    npx ts-node src/main-rmq.ts
+    ```
+    The consumer will log incoming messages and simulated real-time notifications to the console (e.g., `🔔 New message from...`).
 
-### 2. Install dependencies
+## API Documentation
 
-```bash
-npm install
-```
-
-### 3. Start the database
-
-Run the MongoDB instance using Docker Compose. This will start the database in the background.
-
-```bash
-docker-compose up -d
-```
-
-### 4. Run the application
-
-Start the NestJS application in development mode. The server will automatically reload on file changes.
-
-```bash
-npm run start:dev
-```
-
-The application will be running at `http://localhost:3000`.
-
-## API Endpoints
+All endpoints are prefixed with `/api`.
 
 ### Authentication
 
--   **`POST /api/register`**: Register a new user.
-    -   **Body**:
-        ```json
-        {
-          "email": "user@example.com",
-          "password": "your-strong-password"
-        }
-        ```
--   **`POST /api/login`**: Log in an existing user and receive a JWT access token.
-    -   **Body**:
-        ```json
-        {
-          "email": "user@example.com",
-          "password": "your-strong-password"
-        }
-        ```
-    -   **Success Response**:
-        ```json
-        {
-          "access_token": "your-jwt-token"
-        }
-        ```
+#### Register a New User
+
+-   **Endpoint**: `POST /api/register`
+-   **Request Body**:
+    ```json
+    {
+      "email": "test@example.com",
+      "password": "password123"
+    }
+    ```
+-   **Success Response** (`201 Created`):
+    ```json
+    {
+      "message": "User created successfully"
+    }
+    ```
+
+#### Login
+
+-   **Endpoint**: `POST /api/login`
+-   **Request Body**:
+    ```json
+    {
+      "email": "test@example.com",
+      "password": "password123"
+    }
+    ```
+-   **Success Response** (`200 OK`):
+    ```json
+    {
+      "access_token": "your-jwt-token"
+    }
+    ```
 
 ### Profile Management
 
-All profile endpoints require an `Authorization: Bearer <token>` header.
+This section covers endpoints for managing user profiles. All endpoints require a valid JWT token in the `Authorization` header.
 
-#### `POST /api/createProfile`
+#### Create a Profile
 
-Creates or updates a profile for the authenticated user.
-
--   **Request Body:**
+-   **Endpoint**: `POST /api/createProfile`
+-   **Auth**: JWT Required
+-   **Request Body**:
     ```json
     {
-      "zodiac": "Aries",
+      "zodiac": "Leo",
       "horoscope": "Today is a good day."
     }
     ```
+-   **Success Response** (`201 Created`): Returns the created profile object.
 
-#### `GET /api/getProfile`
+#### Get a Profile
 
-Retrieves the profile of the authenticated user.
+-   **Endpoint**: `GET /api/getProfile`
+-   **Auth**: JWT Required
+-   **Success Response** (`200 OK`): Returns the user's profile object.
 
-#### `PUT /api/updateProfile`
+#### Update a Profile
 
-Updates the profile of the authenticated user.
-
--   **Request Body:**
+-   **Endpoint**: `PUT /api/updateProfile`
+-   **Auth**: JWT Required
+-   **Request Body**:
     ```json
     {
-      "zodiac": "Taurus",
-      "horoscope": "A new opportunity will arise."
+      "zodiac": "Virgo"
+    }
+    ```
+-   **Success Response** (`200 OK`): Returns the updated profile object.
+
+#### Delete a Profile
+
+-   **Endpoint**: `DELETE /api/deleteProfile`
+-   **Auth**: JWT Required
+-   **Success Response** (`200 OK`):
+    ```json
+    {
+      "message": "Profile deleted successfully"
     }
     ```
 
-#### `DELETE /api/deleteProfile`
+### Chat Messaging
 
-Deletes the profile of the authenticated user.
+This section covers endpoints for sending and viewing messages. All endpoints require a valid JWT token in the `Authorization` header.
+
+#### Send a Message
+
+Publishes a message to the chat queue for asynchronous processing. The sender is automatically identified from the JWT token.
+
+-   **Endpoint**: `POST /api/sendMessage`
+-   **Auth**: JWT Required
+-   **Request Body**:
+
+```json
+{
+  "receiver": "60d21b4667d0d8992e610c86",
+  "content": "Hello there!"
+}
+```
+
+-   **Success Response** (`201 Created`):
+
+```json
+{
+  "status": "Message sent to queue"
+}
+```
+
+#### View Chat History
+
+Retrieves the message history between the logged-in user and another specified user, sorted by time.
+
+-   **Endpoint**: `GET /api/viewMessages`
+-   **Auth**: JWT Required
+-   **Query Parameters**:
+    -   `userId` (string, required): The MongoDB ObjectId of the other user in the conversation.
+-   **Example Request**:
+
+```
+GET /api/viewMessages?userId=60d21b4667d0d8992e610c86
+```
+
+-   **Success Response** (`200 OK`):
+
+```json
+{
+  "messages": [
+    {
+      "_id": "66767e3b5e4f1a2b3c4d5e6f",
+      "sender": "665f1a9e1f2c3d4e5f6a7b8c",
+      "receiver": "60d21b4667d0d8992e610c86",
+      "content": "Hello there!",
+      "createdAt": "2025-06-22T04:58:03.123Z",
+      "updatedAt": "2025-06-22T04:58:03.123Z",
+      "__v": 0
+    }
+  ]
+}
+```
